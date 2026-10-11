@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Political Triangle Quiz</title>
+<style>
+:root{
+  --bg:#faf8f4; --card:#ffffff; --ink:#1d1d1f; --muted:#6b6b70; --line:#e2ded6;
+  --left:#3b8fd9; --right:#d9644a; --lib:#3fa66b; --center:#9a9aa2;
+  --leftf:rgba(59,143,217,.22); --rightf:rgba(217,100,74,.22); --libf:rgba(63,166,107,.25); --centerf:rgba(154,154,162,.28);
+  --accent:#1d1d1f; --accent-ink:#fff;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#16171a; --card:#1f2024; --ink:#f1f1f3; --muted:#a0a0a8; --line:#34353b;
+    --leftf:rgba(59,143,217,.30); --rightf:rgba(217,100,74,.30); --libf:rgba(63,166,107,.30); --centerf:rgba(154,154,162,.30);
+    --accent:#f1f1f3; --accent-ink:#16171a;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#16171a; --card:#1f2024; --ink:#f1f1f3; --muted:#a0a0a8; --line:#34353b;
+  --leftf:rgba(59,143,217,.30); --rightf:rgba(217,100,74,.30); --libf:rgba(63,166,107,.30); --centerf:rgba(154,154,162,.30);
+  --accent:#f1f1f3; --accent-ink:#16171a;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.45;-webkit-font-smoothing:antialiased}
+.wrap{max-width:560px;margin:0 auto;padding:20px 16px 40px}
+h1{font-size:1.6rem;margin:8px 0 6px;letter-spacing:-.01em}
+p{margin:0 0 12px}
+.muted{color:var(--muted);font-size:.92rem}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px}
+.btn{display:block;width:100%;text-align:left;font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin:0 0 10px;cursor:pointer;transition:border-color .12s, transform .05s}
+.btn:active{transform:scale(.99)}
+.btn:hover{border-color:var(--ink)}
+.btn.mid{text-align:center;color:var(--muted);background:transparent;border-style:dashed}
+.primary{background:var(--accent);color:var(--accent-ink);border:none;text-align:center;font-weight:600;padding:14px;border-radius:12px;font:inherit;font-weight:600;width:100%;cursor:pointer}
+.ghost{background:none;border:none;color:var(--muted);font:inherit;cursor:pointer;padding:8px 0}
+.bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin:6px 0 16px}
+.bar>i{display:block;height:100%;background:var(--ink);width:0;transition:width .25s}
+.topic{font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px}
+.q{font-size:1.1rem;font-weight:600;margin:0 0 14px}
+.row{display:flex;justify-content:space-between;align-items:center}
+.pole{display:flex;align-items:center;gap:10px;margin:10px 0}
+.pole .name{width:116px;font-size:.9rem}
+.pole .track{flex:1;height:12px;background:var(--line);border-radius:6px;overflow:hidden}
+.pole .track i{display:block;height:100%}
+.pole .pct{width:44px;text-align:right;font-variant-numeric:tabular-nums;font-size:.9rem}
+.svgbox{overflow-x:auto}
+svg{width:100%;height:auto;display:block}
+.tag{display:inline-block;font-size:.8rem;padding:3px 10px;border-radius:99px;background:var(--line);margin-bottom:8px}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div id="intro">
+    <h1>Where do you land?</h1>
+    <p class="muted">16 questions, about 5 minutes. For each topic, pick the statement closest to your view. Your answers are plotted on a triangle with three corners: Progressive, Traditional, and Liberty. The middle is Centrist.</p>
+    <div class="card" style="margin:16px 0">
+      <div class="pole"><span class="name" style="color:var(--left);font-weight:600">Progressive</span><span class="muted">Equality, inclusion, collective action</span></div>
+      <div class="pole"><span class="name" style="color:var(--right);font-weight:600">Traditional</span><span class="muted">Order, heritage, national strength</span></div>
+      <div class="pole"><span class="name" style="color:var(--lib);font-weight:600">Liberty</span><span class="muted">Individual freedom, limited government</span></div>
+    </div>
+    <button class="primary" id="start">Start the quiz</button>
+    <p class="muted" style="margin-top:14px">This is a fun reflection tool, not a scientific instrument. Nothing you enter leaves your device.</p>
+  </div>
+
+  <div id="quiz" class="hidden">
+    <div class="row muted"><span id="count"></span><button class="ghost" id="back">&larr; Back</button></div>
+    <div class="bar"><i id="prog"></i></div>
+    <div class="topic" id="topic"></div>
+    <p class="q" id="qtext"></p>
+    <div id="opts"></div>
+  </div>
+
+  <div id="result" class="hidden">
+    <span class="tag">Your political profile</span>
+    <h1 id="rtitle"></h1>
+    <p class="muted" id="rdesc"></p>
+    <div class="card svgbox" style="margin:14px 0">
+      <svg id="tri" viewBox="0 0 400 370" role="img" aria-label="Political triangle with your position marked"></svg>
+    </div>
+    <div class="card">
+      <div id="bars"></div>
+    </div>
+    <p class="muted" style="margin-top:14px">Each question adds one point to the corner you chose, or a third of a point to each corner if you picked "somewhere in between." Centrist means no corner holds more than half of your answers.</p>
+    <button class="primary" id="restart" style="margin-top:6px">Retake the quiz</button>
+  </div>
+
+</div>
+
+<script>
+var Q = [
+ {t:"Economy", q:"Which statement best matches your view of the economy?",
+  l:"Government should actively narrow the gap between rich and poor, even if that means higher taxes on high earners.",
+  r:"Prosperity comes from hard work, stable families, and a strong national industrial base, and policy should reward those.",
+  b:"Government should stay mostly out of the economy. Lower taxes and fewer regulations let people prosper."},
+ {t:"Healthcare", q:"How should healthcare work?",
+  l:"Healthcare should be guaranteed to everyone through a public system.",
+  r:"Healthcare is best handled through employers, family, and community, with a limited public safety net.",
+  b:"Healthcare should be a free market with minimal rules and individual choice."},
+ {t:"Crime", q:"What is the best way to reduce crime?",
+  l:"Address root causes like poverty, and invest in communities and reform.",
+  r:"Strong enforcement, firm sentences, and visible support for police.",
+  b:"Shrink the criminal code and police powers, and protect due process."},
+ {t:"Immigration", q:"Which comes closest to your view on immigration?",
+  l:"Welcoming immigrants and offering paths to citizenship strengthens the country.",
+  r:"Borders should be tightly controlled and immigration limited to protect national cohesion.",
+  b:"Peaceful people should mostly be free to move, work, and trade across borders."},
+ {t:"Speech", q:"How should society handle offensive speech?",
+  l:"Speech that demeans vulnerable groups should carry real social, and sometimes institutional, consequences.",
+  r:"Public institutions should uphold standards of decency and respect for country, faith, and flag.",
+  b:"Nearly all speech should be protected, including speech many people find offensive."},
+ {t:"Drugs", q:"What should drug policy look like?",
+  l:"Treat drug use as a public health issue, focused on treatment and harm reduction.",
+  r:"Drug use damages families and communities, so laws should discourage it firmly.",
+  b:"Adults should be free to use any substance they choose."},
+ {t:"Guns", q:"Which statement is closest to your view on guns?",
+  l:"Stricter laws, such as universal background checks and limits on certain weapons, save lives.",
+  r:"Gun ownership is part of American tradition and self-defense, with reasonable limits for public safety.",
+  b:"The right to own firearms should be essentially unrestricted."},
+ {t:"Education", q:"What should schools prioritize?",
+  l:"Well-funded public schools with inclusive curricula that teach diverse perspectives.",
+  r:"Core basics, patriotism, and traditional values, with parents' priorities respected.",
+  b:"Families should control education dollars through vouchers or homeschooling, and government should not run schools."},
+ {t:"Environment", q:"How should government approach the environment?",
+  l:"Government must act boldly on climate through regulation and public investment.",
+  r:"Environmental policy should not undercut energy independence, jobs, and national strength.",
+  b:"Property rights and markets protect the environment better than regulation does."},
+ {t:"Foreign policy", q:"What should guide America's role in the world?",
+  l:"Prioritize diplomacy, alliances, and international institutions over force.",
+  r:"Maintain the strongest military in the world and be willing to use it to defend national interests.",
+  b:"Avoid foreign wars and entanglements and focus on defending home."},
+ {t:"Privacy and tech", q:"Which view on surveillance and technology fits you best?",
+  l:"Strong rules should limit how tech companies collect data and spread harmful content.",
+  r:"Security agencies need broad powers to protect the nation from threats.",
+  b:"Neither government nor corporations should have broad access to personal data, and content rules should be minimal."},
+ {t:"Family and culture", q:"How should society treat changing social norms?",
+  l:"Society should keep expanding recognition and rights for different identities and family forms.",
+  r:"Traditional family and cultural norms are the foundation of a healthy society and deserve to be preserved.",
+  b:"Personal lives are none of the government's business. Live and let live."},
+ {t:"Religion", q:"What role should religion play in public life?",
+  l:"Government should be strictly secular, and faith should be a private matter.",
+  r:"Religious faith and values deserve a respected place in public life.",
+  b:"Government should neither promote nor restrict religion. Individuals decide."},
+ {t:"Safety net", q:"What should help people who are struggling?",
+  l:"Strong unions, worker protections, and a robust public safety net.",
+  r:"Assistance should be limited and tied to work, with community and charity as the first resort.",
+  b:"A minimal safety net, with most help provided voluntarily through charity and mutual aid."},
+ {t:"Trade", q:"What is the right approach to trade?",
+  l:"Trade deals should protect workers and the environment.",
+  r:"Tariffs and protections should shield American industry and jobs.",
+  b:"Free trade with few or no tariffs."},
+ {t:"Power", q:"Which concern worries you most?",
+  l:"Large corporations hold too much power and need to be checked by government.",
+  r:"Declining respect for law, institutions, and authority threatens social stability.",
+  b:"Concentrated government power is the greatest threat to individual freedom."}
+];
+
+var COLORS = {l:'var(--left)', r:'var(--right)', b:'var(--lib)'};
+var NAMES = {l:'Progressive', r:'Traditional', b:'Liberty'};
+var idx = 0, answers = [];
+function $(id){return document.getElementById(id)}
+function show(id){['intro','quiz','result'].forEach(function(x){$(x).classList.add('hidden')});$(id).classList.remove('hidden');window.scrollTo(0,0)}
+
+function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t}return a}
+
+function render(){
+  var q = Q[idx];
+  $('count').textContent = 'Question ' + (idx+1) + ' of ' + Q.length;
+  $('prog').style.width = (idx/Q.length*100) + '%';
+  $('topic').textContent = q.t;
+  $('qtext').textContent = q.q;
+  $('back').style.visibility = idx===0 ? 'hidden' : 'visible';
+  var box = $('opts'); box.innerHTML = '';
+  shuffle(['l','r','b']).forEach(function(k){
+    var b = document.createElement('button');
+    b.className = 'btn'; b.textContent = q[k];
+    b.onclick = function(){choose(k)};
+    box.appendChild(b);
+  });
+  var m = document.createElement('button');
+  m.className = 'btn mid'; m.textContent = 'Somewhere in between';
+  m.onclick = function(){choose('m')};
+  box.appendChild(m);
+}
+function choose(k){
+  answers[idx] = k; idx++;
+  if(idx >= Q.length){ finish(); } else { render(); }
+}
+function scores(){
+  var t = {l:0,r:0,b:0};
+  answers.forEach(function(k){
+    if(k==='m'){t.l+=1/3;t.r+=1/3;t.b+=1/3}else{t[k]+=1}
+  });
+  var n = answers.length;
+  return {l:t.l/n, r:t.r/n, b:t.b/n};
+}
+function finish(){
+  var s = scores();
+  var keys = ['l','r','b'].sort(function(a,b){return s[b]-s[a]});
+  var top = keys[0], second = keys[1];
+  var title, desc;
+  var P = function(k){return Math.round(s[k]*100)};
+  if(s[top] <= 0.5){
+    if(s[top] >= 0.42){
+      title = 'Centrist, leaning ' + NAMES[top];
+      desc = 'You sit in the middle of the triangle, with a tilt toward ' + NAMES[top].toLowerCase() + ' instincts. Your answers pull in several directions depending on the issue.';
+    } else {
+      title = 'Centrist';
+      desc = 'Your answers are spread fairly evenly across all three corners. Issue by issue, you draw from progressive, traditional, and liberty-minded views.';
+    }
+  } else if(s[second] >= s[top]-0.12){
+    title = NAMES[top] + '–' + NAMES[second] + ' blend';
+    desc = 'Your answers split between ' + NAMES[top].toLowerCase() + ' and ' + NAMES[second].toLowerCase() + ' instincts, and the third corner pulls you far less.';
+  } else {
+    title = NAMES[top] + (top==='b' ? '' : '-leaning');
+    desc = {l:'You lean toward equality, inclusion, and collective action to solve shared problems.',
+            r:'You lean toward order, heritage, and national strength as the foundation of a healthy society.',
+            b:'You lean toward individual freedom and limited government across most issues.'}[top];
+  }
+  $('rtitle').textContent = title;
+  $('rdesc').textContent = desc;
+
+  var bars = '';
+  ['l','r','b'].forEach(function(k){
+    bars += '<div class="pole"><span class="name" style="color:'+COLORS[k]+';font-weight:600">'+NAMES[k]+'</span><span class="track"><i style="width:'+P(k)+'%;background:'+COLORS[k]+'"></i></span><span class="pct">'+P(k)+'%</span></div>';
+  });
+  $('bars').innerHTML = bars;
+  drawTriangle(s);
+  $('prog').style.width = '100%';
+  show('result');
+}
+function drawTriangle(s){
+  var L=[30,40], R=[370,40], B=[200,330];
+  var mLR=[200,40], mLB=[115,185], mRB=[285,185];
+  var pts = function(a){return a.map(function(p){return p.join(',')}).join(' ')};
+  var x = s.l*L[0] + s.r*R[0] + s.b*B[0];
+  var y = s.l*L[1] + s.r*R[1] + s.b*B[1];
+  var svg = '';
+  svg += '<polygon points="'+pts([L,mLR,mLB])+'" fill="var(--leftf)"/>';
+  svg += '<polygon points="'+pts([R,mRB,mLR])+'" fill="var(--rightf)"/>';
+  svg += '<polygon points="'+pts([B,mLB,mRB])+'" fill="var(--libf)"/>';
+  svg += '<polygon points="'+pts([mLR,mLB,mRB])+'" fill="var(--centerf)"/>';
+  svg += '<polygon points="'+pts([L,R,B])+'" fill="none" stroke="var(--ink)" stroke-width="2.5" stroke-linejoin="round"/>';
+  svg += '<polygon points="'+pts([mLR,mLB,mRB])+'" fill="none" stroke="var(--ink)" stroke-opacity=".5" stroke-width="1.5"/>';
+  svg += '<text x="'+L[0]+'" y="24" text-anchor="start" font-size="14" font-weight="700" fill="var(--left)">PROGRESSIVE</text>';
+  svg += '<text x="'+R[0]+'" y="24" text-anchor="end" font-size="14" font-weight="700" fill="var(--right)">TRADITIONAL</text>';
+  svg += '<text x="'+B[0]+'" y="358" text-anchor="middle" font-size="14" font-weight="700" fill="var(--lib)">LIBERTY</text>';
+  svg += '<text x="200" y="108" text-anchor="middle" font-size="12" font-weight="700" fill="var(--muted)">CENTRIST</text>';
+  svg += '<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="11" fill="var(--ink)" stroke="var(--bg)" stroke-width="3"/>';
+  svg += '<text x="'+x.toFixed(1)+'" y="'+(y-18).toFixed(1)+'" text-anchor="middle" font-size="13" font-weight="700" fill="var(--ink)">You</text>';
+  $('tri').innerHTML = svg;
+}
+
+$('start').onclick = function(){idx=0;answers=[];render();show('quiz')};
+$('back').onclick = function(){ if(idx>0){idx--;answers.length=idx;render();} };
+$('restart').onclick = function(){idx=0;answers=[];show('intro')};
+</script>
+</body>
+</html>
